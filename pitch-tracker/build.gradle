@@ -1,0 +1,69 @@
+apply plugin: 'com.android.model.library'
+
+model {
+    // Hack: Workaround to try to get the release build signed
+    // See https://code.google.com/p/android/issues/detail?id=182249
+    def releaseSigningConfig
+
+    android {
+        compileSdkVersion = 23
+        buildToolsVersion = "23.0.2"
+
+        defaultConfig.with {
+            minSdkVersion.apiLevel = 15
+            targetSdkVersion.apiLevel = 23
+            versionCode = 1
+            versionName = "1.0"
+        }
+    }
+
+    compileOptions.with {
+        sourceCompatibility=JavaVersion.VERSION_1_7
+        targetCompatibility=JavaVersion.VERSION_1_7
+    }
+
+    android.ndk {
+        moduleName = "pitch-tracker"
+        cppFlags.add("-std=c++11")
+        // ldLibs.addAll(['android', 'log', 'OpenSLES'])
+        stl = "stlport_static"
+
+        /*
+         * Other ndk flags configurable here are
+         * cppFlags.add("-fno-rtti")
+         * cppFlags.add("-fno-exceptions")
+         * ldLibs.addAll(["android", "log"])
+         * stl       = "system"
+         */
+    }
+
+    android.signingConfigs {
+        create('release') {
+            def releaseKeystore = "~/Dev/Android/bandonleon.keystore"
+            if (System.getenv("BANDONLEON_KEYSTORE") != null) {
+                releaseKeystore = System.getenv("BANDONLEON_KEYSTORE")
+            }
+            storeFile = file(releaseKeystore)
+            storePassword = System.getenv("BANDONLEON_KEYSTORE_PASS")
+            keyAlias = "musetta"
+            keyPassword = System.getenv("BANDONLEON_MUSETTA_PASS")
+            releaseSigningConfig = it
+        }
+    }
+
+    android.buildTypes {
+        release {
+            minifyEnabled = false
+            // proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
+            proguardFiles.add(file('proguard-android.txt'))
+            // signingConfig = signingConfigs.release
+            signingConfig = releaseSigningConfig
+        }
+    }
+}
+
+dependencies {
+    // compile fileTree(dir: 'libs', include: ['*.jar'])
+    // testCompile 'junit:junit:4.12'
+    // compile 'com.android.support:appcompat-v7:23.1.1'
+}
